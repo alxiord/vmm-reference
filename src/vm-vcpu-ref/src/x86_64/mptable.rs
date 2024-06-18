@@ -33,14 +33,26 @@ struct MpcLintsrc(mpspec::mpc_lintsrc);
 #[derive(Copy, Clone, Default)]
 struct MpfIntel(mpspec::mpf_intel);
 
-// These `mpspec` wrapper types are POD (Plain Old Data), so reading them from
-// data a slice of u8 (which is what ByteValued offers) is safe.
+// Safety:
+// Wrapper over POD (Plain Old Data), therefore safe to read a slice of u8.
 unsafe impl ByteValued for MpcBus {}
+// Safety:
+// Wrapper over POD (Plain Old Data), therefore safe to read a slice of u8.
 unsafe impl ByteValued for MpcCpu {}
+// Safety:
+// Wrapper over POD (Plain Old Data), therefore safe to read a slice of u8.
 unsafe impl ByteValued for MpcIntsrc {}
+// Safety:
+// Wrapper over POD (Plain Old Data), therefore safe to read a slice of u8.
 unsafe impl ByteValued for MpcIoapic {}
+// Safety:
+// Wrapper over POD (Plain Old Data), therefore safe to read a slice of u8.
 unsafe impl ByteValued for MpcTable {}
+// Safety:
+// Wrapper over POD (Plain Old Data), therefore safe to read a slice of u8.
 unsafe impl ByteValued for MpcLintsrc {}
+// Safety:
+// Wrapper over POD (Plain Old Data), therefore safe to read a slice of u8.
 unsafe impl ByteValued for MpfIntel {}
 
 // MPTABLE, describing VCPUS.
@@ -105,6 +117,7 @@ const CPU_FEATURE_APIC: u32 = 0x200;
 const CPU_FEATURE_FPU: u32 = 0x001;
 
 fn compute_checksum<T: Copy>(v: &T) -> u8 {
+    // Safety:
     // Safe because we are only reading the bytes within the size of the `T` reference `v`.
     let v_slice = unsafe { slice::from_raw_parts(v as *const T as *const u8, mem::size_of::<T>()) };
     let mut checksum: u8 = 0;

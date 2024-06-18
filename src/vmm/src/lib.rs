@@ -704,7 +704,7 @@ impl Vmm {
     }
 
     fn check_kvm_capabilities(kvm: &Kvm) -> Result<()> {
-        let capabilities = vec![Irqchip, Ioeventfd, Irqfd, UserMemory];
+        let capabilities = [Irqchip, Ioeventfd, Irqfd, UserMemory];
 
         // Check that all desired capabilities are supported.
         if let Some(c) = capabilities

@@ -554,11 +554,11 @@ impl KvmVcpu {
 
         // Write segments to guest memory.
         gdt_table.write_to_mem(guest_memory).map_err(Error::Gdt)?;
-        sregs.gdt.base = BOOT_GDT_OFFSET as u64;
+        sregs.gdt.base = BOOT_GDT_OFFSET;
         sregs.gdt.limit = std::mem::size_of_val(&gdt_table) as u16 - 1;
 
         write_idt_value(0, guest_memory).map_err(Error::Gdt)?;
-        sregs.idt.base = BOOT_IDT_OFFSET as u64;
+        sregs.idt.base = BOOT_IDT_OFFSET;
         sregs.idt.limit = std::mem::size_of::<u64>() as u16 - 1;
 
         sregs.cs = code_seg;
@@ -654,6 +654,7 @@ impl KvmVcpu {
     fn set_local_immediate_exit(value: u8) {
         Self::TLS_VCPU_PTR.with(|v| {
             if let Some(vcpu) = *v.borrow() {
+                // Safety:
                 // The block below modifies a mmaped memory region (`kvm_run` struct) which is valid
                 // as long as the `VMM` is still in scope. This function is called in response to
                 // SIGRTMIN(), while the vCPU threads are still active. Their termination are

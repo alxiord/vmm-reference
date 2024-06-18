@@ -349,13 +349,13 @@ impl<EH: 'static + ExitHandler + Send> KvmVm<EH> {
             let memory_region = kvm_userspace_memory_region {
                 slot: index as u32,
                 guest_phys_addr: region.start_addr().raw_value(),
-                memory_size: region.len() as u64,
+                memory_size: region.len(),
                 // It's safe to unwrap because the guest address is valid.
                 userspace_addr: guest_memory.get_host_address(region.start_addr()).unwrap() as u64,
                 flags: 0,
             };
 
-            // Safe because:
+            // Safety:
             // * userspace_addr is a valid address for a memory region, obtained by calling
             //   get_host_address() on a valid region's start address;
             // * the memory regions do not overlap - there's either a single region spanning
@@ -659,7 +659,7 @@ mod tests {
     #[test]
     #[cfg(target_arch = "x86_64")]
     fn test_failed_setup_mptable() {
-        let num_vcpus = (MAX_SUPPORTED_CPUS + 1) as u8;
+        let num_vcpus = MAX_SUPPORTED_CPUS + 1;
         let kvm = Kvm::new().unwrap();
         let guest_memory = default_memory();
         let res = default_vm(&kvm, &guest_memory, num_vcpus);
