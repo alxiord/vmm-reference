@@ -7,12 +7,12 @@ use api::Cli;
 use vmm::Vmm;
 
 fn main() {
+    let cmdline_args = env::args().collect::<Vec<String>>();
+
     match Cli::launch(
-        env::args()
-            .collect::<Vec<String>>()
-            .iter()
-            .map(|s| s.as_str())
-            .collect(),
+        &cmdline_args, // .iter()
+                       // .map(|s| s.as_str())
+                       // .collect(),
     ) {
         Ok(vmm_config) => {
             let mut vmm =

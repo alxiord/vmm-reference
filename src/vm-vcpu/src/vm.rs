@@ -54,7 +54,6 @@ impl VmConfig {
 }
 
 #[cfg(target_arch = "x86_64")]
-#[derive(Clone)]
 pub struct VmState {
     pub pitstate: kvm_pit_state2,
     pub clock: kvm_clock_data,
@@ -66,7 +65,6 @@ pub struct VmState {
 }
 
 #[cfg(target_arch = "aarch64")]
-#[derive(Clone)]
 pub struct VmState {
     pub config: VmConfig,
     pub vcpus_state: Vec<VcpuState>,
@@ -262,7 +260,7 @@ impl<EH: 'static + ExitHandler + Send> KvmVm<EH> {
     // Set the state of this `KvmVm`. Errors returned from this function
     // MUST not be ignored because they can lead to undefined behavior when
     // the state of the VM is only partially set.
-    fn set_state(&mut self, state: VmState) -> Result<()> {
+    fn set_state(&mut self, state: &VmState) -> Result<()> {
         self.fd
             .set_pit2(&state.pitstate)
             .map_err(Error::VmSetPit2)?;
@@ -281,7 +279,7 @@ impl<EH: 'static + ExitHandler + Send> KvmVm<EH> {
     }
 
     #[cfg(target_arch = "aarch64")]
-    fn set_state(&mut self, state: VmState) -> Result<()> {
+    fn set_state(&mut self, state: &VmState) -> Result<()> {
         let mpidrs = state.vcpus_state.iter().map(|state| state.mpidr).collect();
         self.gic().restore_state(&state.gic_state, mpidrs)?;
         Ok(())
@@ -290,7 +288,7 @@ impl<EH: 'static + ExitHandler + Send> KvmVm<EH> {
     /// Create a VM from a previously saved state.
     pub fn from_state<M: GuestMemory>(
         kvm: &Kvm,
-        state: VmState,
+        state: &VmState,
         guest_memory: &M,
         exit_handler: EH,
         bus: Arc<Mutex<IoManager>>,
@@ -299,7 +297,7 @@ impl<EH: 'static + ExitHandler + Send> KvmVm<EH> {
         // on x86_64 and aarch64.
         // For both, we first need to create the VM fd (from KVM).
         let mut vm = Self::create_vm(kvm, state.config.clone(), exit_handler, guest_memory)?;
-        let vcpus_state = state.vcpus_state.clone();
+        let vcpus_state = state.vcpus_state.as_ref();
         #[cfg(target_arch = "x86_64")]
         {
             // On x86_64, we need to create the in-kernel IRQ chip so we can then create the vCPUs.
@@ -443,7 +441,7 @@ impl<EH: 'static + ExitHandler + Send> KvmVm<EH> {
     fn create_vcpus_from_state<M: GuestMemory>(
         &mut self,
         bus: Arc<Mutex<IoManager>>,
-        vcpus_state: Vec<VcpuState>,
+        vcpus_state: &[VcpuState],
     ) -> Result<()> {
         self.vcpus = vcpus_state
             .iter()
@@ -451,7 +449,7 @@ impl<EH: 'static + ExitHandler + Send> KvmVm<EH> {
                 KvmVcpu::from_state::<M>(
                     &self.fd,
                     bus.clone(),
-                    state.clone(),
+                    state,
                     self.vcpu_barrier.clone(),
                     self.vcpu_run_state.clone(),
                 )
@@ -783,7 +781,9 @@ mod tests {
         let kvm = Kvm::new().unwrap();
         let io_manager = Arc::new(Mutex::new(IoManager::new()));
         let exit_handler = WrappedExitHandler::default();
-        assert!(KvmVm::from_state(&kvm, vm_state, &guest_memory, exit_handler, io_manager).is_ok());
+        assert!(
+            KvmVm::from_state(&kvm, &vm_state, &guest_memory, exit_handler, io_manager).is_ok()
+        );
     }
 
     #[cfg(target_arch = "aarch64")]

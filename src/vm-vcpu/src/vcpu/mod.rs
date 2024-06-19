@@ -268,7 +268,6 @@ impl VcpuConfigList {
 
 /// Structure holding the kvm state for an x86_64 VCPU.
 #[cfg(target_arch = "x86_64")]
-#[derive(Clone)]
 pub struct VcpuState {
     pub cpuid: CpuId,
     pub msrs: Msrs,
@@ -374,7 +373,7 @@ impl KvmVcpu {
     // Set the state of this `KvmVcpu`. Errors returned from this function
     // MUST not be ignored because they can lead to undefined behavior when
     // the state of the vCPU is only partially set.
-    fn set_state(&mut self, state: VcpuState) -> Result<()> {
+    fn set_state(&mut self, state: &VcpuState) -> Result<()> {
         self.vcpu_fd
             .set_cpuid2(&state.cpuid)
             .map_err(Error::VcpuSetCpuid)?;
@@ -387,9 +386,14 @@ impl KvmVcpu {
         self.vcpu_fd
             .set_sregs(&state.sregs)
             .map_err(Error::VcpuSetSregs)?;
-        self.vcpu_fd
-            .set_xsave(&state.xsave)
-            .map_err(Error::VcpuSetXsave)?;
+        // SAFETY:
+        // Safe because supported kernels are trusted to not read past the end
+        // of the kvm_xsave struct.
+        unsafe {
+            self.vcpu_fd
+                .set_xsave(&state.xsave)
+                .map_err(Error::VcpuSetXsave)?;
+        }
         self.vcpu_fd
             .set_xcrs(&state.xcrs)
             .map_err(Error::VcpuSetXcrs)?;
@@ -427,7 +431,7 @@ impl KvmVcpu {
     pub fn from_state<M: GuestMemory>(
         vm_fd: &VmFd,
         device_mgr: Arc<Mutex<IoManager>>,
-        state: VcpuState,
+        state: &VcpuState,
         run_barrier: Arc<Barrier>,
         run_state: Arc<VcpuRunState>,
     ) -> Result<Self> {
@@ -660,7 +664,8 @@ impl KvmVcpu {
                 // SIGRTMIN(), while the vCPU threads are still active. Their termination are
                 // strictly bound to the lifespan of the `VMM` and it precedes the `VMM` dropping.
                 unsafe {
-                    let vcpu_ref = &*vcpu;
+                    let vcpu_ptr = vcpu as *mut KvmVcpu;
+                    let vcpu_ref = &mut *vcpu_ptr;
                     vcpu_ref.vcpu_fd.set_kvm_immediate_exit(value);
                 };
             }

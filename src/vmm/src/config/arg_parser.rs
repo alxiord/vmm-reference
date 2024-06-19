@@ -8,7 +8,7 @@ use std::str::FromStr;
 #[derive(Debug, PartialEq)]
 pub(super) enum CfgArgParseError {
     /// Parsing failed, param and error.
-    ParsingFailed(&'static str, String),
+    ParsingFailed(String, String),
     UnknownArg(String),
 }
 
@@ -45,7 +45,7 @@ impl CfgArgParser {
     /// Retrieves the value of `param`, consuming it from `Self`.
     pub(super) fn value_of<T: FromStr>(
         &mut self,
-        param_name: &'static str,
+        param_name: &str,
     ) -> Result<Option<T>, CfgArgParseError>
     where
         <T as FromStr>::Err: fmt::Display,
@@ -53,7 +53,9 @@ impl CfgArgParser {
         match self.args.remove(param_name) {
             Some(value) if !value.is_empty() => value
                 .parse::<T>()
-                .map_err(|err| CfgArgParseError::ParsingFailed(param_name, err.to_string()))
+                .map_err(|err| {
+                    CfgArgParseError::ParsingFailed(param_name.to_string(), err.to_string())
+                })
                 .map(Some),
             _ => Ok(None),
         }
