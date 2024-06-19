@@ -16,12 +16,12 @@ const IOEVENT_DATA: u32 = 0;
 // signalling implementation based on `EventFd`s, and then also implements `MutEventSubscriber`
 // to interact with the event manager. `ioeventfd` is the `EventFd` connected to queue
 // notifications coming from the driver.
-pub(crate) struct QueueHandler<M: GuestAddressSpace> {
-    pub inner: InOrderQueueHandler<M, SingleFdSignalQueue>,
+pub(crate) struct QueueHandler {
+    pub inner: InOrderQueueHandler<SingleFdSignalQueue>,
     pub ioeventfd: EventFd,
 }
 
-impl<M: GuestAddressSpace> MutEventSubscriber for QueueHandler<M> {
+impl MutEventSubscriber for QueueHandler {
     fn process(&mut self, events: Events, ops: &mut EventOps) {
         let mut error = true;
 

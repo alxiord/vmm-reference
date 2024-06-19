@@ -15,13 +15,13 @@ const TAPFD_DATA: u32 = 0;
 const RX_IOEVENT_DATA: u32 = 1;
 const TX_IOEVENT_DATA: u32 = 2;
 
-pub struct QueueHandler<M: GuestAddressSpace> {
-    pub inner: SimpleHandler<M, SingleFdSignalQueue>,
+pub struct QueueHandler {
+    pub inner: SimpleHandler<SingleFdSignalQueue>,
     pub rx_ioevent: EventFd,
     pub tx_ioevent: EventFd,
 }
 
-impl<M: GuestAddressSpace> QueueHandler<M> {
+impl QueueHandler {
     // Helper method that receives an error message to be logged and the `ops` handle
     // which is used to unregister all events.
     fn handle_error<S: AsRef<str>>(&self, s: S, ops: &mut EventOps) {
@@ -35,7 +35,7 @@ impl<M: GuestAddressSpace> QueueHandler<M> {
     }
 }
 
-impl<M: GuestAddressSpace> MutEventSubscriber for QueueHandler<M> {
+impl MutEventSubscriber for QueueHandler {
     fn process(&mut self, events: Events, ops: &mut EventOps) {
         // TODO: We can also consider panicking on the errors that cannot be generated
         // or influenced.

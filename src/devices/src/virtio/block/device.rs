@@ -9,7 +9,7 @@ use std::sync::{Arc, Mutex};
 
 use virtio_blk::stdio_executor::StdIoBackend;
 use virtio_device::{VirtioConfig, VirtioDeviceActions, VirtioDeviceType, VirtioMmioDevice};
-use virtio_queue::Queue;
+use virtio_queue::{Queue, QueueT};
 use vm_device::bus::MmioAddress;
 use vm_device::device_manager::MmioManager;
 use vm_device::{DeviceMmio, MutDeviceMmio};
@@ -25,8 +25,8 @@ use super::{build_config_space, BlockArgs, Error, Result};
 // This Block device can only use the MMIO transport for now, but we plan to reuse large parts of
 // the functionality when we implement virtio PCI as well, for example by having a base generic
 // type, and then separate concrete instantiations for `MmioConfig` and `PciConfig`.
-pub struct Block<M: GuestAddressSpace> {
-    cfg: CommonConfig<M>,
+pub struct Block<Q: QueueT> {
+    cfg: CommonConfig<Q>,
     file_path: PathBuf,
     read_only: bool,
     // We'll prob need to remember this for state save/restore unless we pass the info from
@@ -34,16 +34,16 @@ pub struct Block<M: GuestAddressSpace> {
     _root_device: bool,
 }
 
-impl<M> Block<M>
+impl<Q> Block<Q>
 where
-    M: GuestAddressSpace + Clone + Send + 'static,
+    Q: QueueT,
 {
     // Helper method that only creates a `Block` object.
     fn create_block<B>(env: &mut Env<M, B>, args: &BlockArgs) -> Result<Self> {
         let device_features = args.device_features();
 
         // A block device has a single queue.
-        let queues = vec![Queue::new(env.mem.clone(), QUEUE_MAX_SIZE)];
+        let queues = vec![Queue::new(QUEUE_MAX_SIZE)];
         let config_space = build_config_space(&args.file_path)?;
         let virtio_cfg = VirtioConfig::new(device_features, queues, config_space);
 
@@ -59,8 +59,9 @@ where
 
     // Create `Block` object, register it on the MMIO bus, and add any extra required info to
     // the kernel cmdline from the environment.
-    pub fn new<B>(env: &mut Env<M, B>, args: &BlockArgs) -> Result<Arc<Mutex<Self>>>
+    pub fn new<M, B>(env: &mut Env<M, B>, args: &BlockArgs) -> Result<Arc<Mutex<Self>>>
     where
+        M: GuestAddressSpace,
         // We're using this (more convoluted) bound so we can pass both references and smart
         // pointers such as mutex guards here.
         B: DerefMut,
@@ -79,25 +80,25 @@ where
     }
 }
 
-impl<M: GuestAddressSpace + Clone + Send + 'static> Borrow<VirtioConfig<M>> for Block<M> {
+impl<Q: QueueT> Borrow<VirtioConfig<M>> for Block<Q> {
     fn borrow(&self) -> &VirtioConfig<M> {
         &self.cfg.virtio
     }
 }
 
-impl<M: GuestAddressSpace + Clone + Send + 'static> BorrowMut<VirtioConfig<M>> for Block<M> {
+impl<Q: QueueT> BorrowMut<VirtioConfig<M>> for Block<Q> {
     fn borrow_mut(&mut self) -> &mut VirtioConfig<M> {
         &mut self.cfg.virtio
     }
 }
 
-impl<M: GuestAddressSpace + Clone + Send + 'static> VirtioDeviceType for Block<M> {
+impl<Q: QueueT> VirtioDeviceType for Block<Q> {
     fn device_type(&self) -> u32 {
         BLOCK_DEVICE_ID
     }
 }
 
-impl<M: GuestAddressSpace + Clone + Send + 'static> VirtioDeviceActions for Block<M> {
+impl<Q: QueueT> VirtioDeviceActions for Block<Q> {
     type E = Error;
 
     fn activate(&mut self) -> Result<()> {
@@ -144,9 +145,9 @@ impl<M: GuestAddressSpace + Clone + Send + 'static> VirtioDeviceActions for Bloc
     }
 }
 
-impl<M: GuestAddressSpace + Clone + Send + 'static> VirtioMmioDevice<M> for Block<M> {}
+impl<Q: QueueT> VirtioMmioDevice for Block<Q> {}
 
-impl<M: GuestAddressSpace + Clone + Send + 'static> MutDeviceMmio for Block<M> {
+impl<Q: QueueT> MutDeviceMmio for Block<Q> {
     fn mmio_read(&mut self, _base: MmioAddress, offset: u64, data: &mut [u8]) {
         self.read(offset, data);
     }

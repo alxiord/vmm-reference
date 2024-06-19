@@ -19,6 +19,7 @@ use event_manager::{
 use kvm_ioctls::{IoEventAddress, VmFd};
 use linux_loader::cmdline::Cmdline;
 use virtio_device::VirtioConfig;
+use virtio_queue::QueueT;
 use vm_device::bus::{self, MmioAddress, MmioRange};
 use vm_device::device_manager::MmioManager;
 use vm_device::DeviceMmio;
@@ -154,16 +155,16 @@ where
 }
 
 // Holds configuration objects which are common to all current devices.
-pub struct CommonConfig<M: GuestAddressSpace> {
-    pub virtio: VirtioConfig<M>,
+pub struct CommonConfig<Q: QueueT> {
+    pub virtio: VirtioConfig<Q>,
     pub mmio: MmioConfig,
     pub endpoint: RemoteEndpoint<Subscriber>,
     pub vm_fd: Arc<VmFd>,
     pub irqfd: Arc<EventFd>,
 }
 
-impl<M: GuestAddressSpace> CommonConfig<M> {
-    pub fn new<B>(virtio_cfg: VirtioConfig<M>, env: &Env<M, B>) -> Result<Self> {
+impl<Q: QueueT> CommonConfig<Q> {
+    pub fn new<Q, M, B>(virtio_cfg: VirtioConfig<Q>, env: &Env<M, B>) -> Result<Self> {
         let irqfd = Arc::new(EventFd::new(EFD_NONBLOCK).map_err(Error::EventFd)?);
 
         env.vm_fd

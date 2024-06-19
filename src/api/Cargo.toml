@@ -10,4 +10,4 @@ clap = "4.5.7"
 vmm = { path = "../vmm" }
 
 [dev-dependencies]
-linux-loader = "0.4.0"
+linux-loader = "0.11.0"

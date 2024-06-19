@@ -42,18 +42,20 @@ impl From<stdio_executor::ProcessReqError> for Error {
 // object), but the aim is to have a way of working with generic backends and turn this into
 // a more flexible building block. The name comes from processing and returning descriptor
 // chains back to the device in the same order they are received.
-pub struct InOrderQueueHandler<M: GuestAddressSpace, S: SignalUsedQueue> {
+pub struct InOrderQueueHandler<S: SignalUsedQueue> {
     pub driver_notify: S,
-    pub queue: Queue<M>,
+    pub queue: Queue,
     pub disk: StdIoBackend<File>,
 }
 
-impl<M, S> InOrderQueueHandler<M, S>
+impl<S> InOrderQueueHandler<S>
 where
-    M: GuestAddressSpace,
     S: SignalUsedQueue,
 {
-    fn process_chain(&mut self, mut chain: DescriptorChain<M::T>) -> result::Result<(), Error> {
+    fn process_chain<M: GuestAddressSpace>(
+        &mut self,
+        mut chain: DescriptorChain<M>,
+    ) -> result::Result<(), Error> {
         let used_len = match Request::parse(&mut chain) {
             Ok(request) => self.disk.process_request(chain.memory(), &request)?,
             Err(e) => {

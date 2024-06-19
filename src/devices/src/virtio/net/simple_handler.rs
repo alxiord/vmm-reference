@@ -39,18 +39,18 @@ impl From<virtio_queue::Error> for Error {
 // the way queue notification is implemented. The backend is not yet generic (we always assume a
 // `Tap` object), but we're looking at improving that going forward.
 // TODO: Find a better name.
-pub struct SimpleHandler<M: GuestAddressSpace, S: SignalUsedQueue> {
+pub struct SimpleHandler<S: SignalUsedQueue> {
     pub driver_notify: S,
-    pub rxq: Queue<M>,
+    pub rxq: Queue,
     pub rxbuf_current: usize,
     pub rxbuf: [u8; MAX_BUFFER_SIZE],
-    pub txq: Queue<M>,
+    pub txq: Queue,
     pub txbuf: [u8; MAX_BUFFER_SIZE],
     pub tap: Tap,
 }
 
-impl<M: GuestAddressSpace, S: SignalUsedQueue> SimpleHandler<M, S> {
-    pub fn new(driver_notify: S, rxq: Queue<M>, txq: Queue<M>, tap: Tap) -> Self {
+impl<S: SignalUsedQueue> SimpleHandler<S> {
+    pub fn new(driver_notify: S, rxq: Queue, txq: Queue, tap: Tap) -> Self {
         SimpleHandler {
             driver_notify,
             rxq,
@@ -131,9 +131,9 @@ impl<M: GuestAddressSpace, S: SignalUsedQueue> SimpleHandler<M, S> {
         Ok(())
     }
 
-    fn send_frame_from_chain(
+    fn send_frame_from_chain<M: GuestAddressSpace>(
         &mut self,
-        chain: &mut DescriptorChain<M::T>,
+        chain: &mut DescriptorChain<M>,
     ) -> result::Result<u32, Error> {
         let mut count = 0;
 
