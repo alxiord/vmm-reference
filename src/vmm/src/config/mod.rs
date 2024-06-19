@@ -73,7 +73,7 @@ impl fmt::Display for ConversionError {
 }
 
 /// Guest memory configurations.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct MemoryConfig {
     /// Guest memory size in MiB.
     pub size_mib: u32,

@@ -5,7 +5,7 @@ authors = ["rust-vmm AWS maintainers <rust-vmm-maintainers@amazon.com>"]
 edition = "2018"
 
 [dependencies]
-clap = "3.2.17"
+clap = "4.5.7"
 
 vmm = { path = "../vmm" }
 
