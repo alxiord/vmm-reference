@@ -2,7 +2,7 @@
 name = "devices"
 version = "0.1.0"
 authors = ["rust-vmm AWS maintainers <rust-vmm-maintainers@amazon.com>"]
-edition = "2018"
+edition = "2021"
 license = "Apache-2.0 OR BSD-3-Clause"
 
 [dependencies]
