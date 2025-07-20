@@ -1,6 +1,7 @@
 // Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0 OR BSD-3-Clause
 
+use std::fmt::Display;
 use std::fs::File;
 use std::result;
 
@@ -17,6 +18,16 @@ pub enum Error {
     GuestMemory(vm_memory::GuestMemoryError),
     Queue(virtio_queue::Error),
     ProcessRequest(stdio_executor::ProcessReqError),
+}
+
+impl Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::GuestMemory(e) => e.fmt(f),
+            Self::Queue(e) => e.fmt(f),
+            Self::ProcessRequest(e) => write!(f, "{:?}", e),
+        }
+    }
 }
 
 impl From<vm_memory::GuestMemoryError> for Error {

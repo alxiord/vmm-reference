@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0 OR BSD-3-Clause
 
 use std::cmp;
+use std::fmt::Display;
 use std::io::{self, Read, Write};
 use std::result;
 
@@ -32,6 +33,16 @@ pub enum Error {
 impl From<virtio_queue::Error> for Error {
     fn from(e: virtio_queue::Error) -> Self {
         Error::Queue(e)
+    }
+}
+
+impl Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::GuestMemory(e) => e.fmt(f),
+            Self::Queue(e) => e.fmt(f),
+            Self::Tap(e) => write!(f, "{:?}", e),
+        }
     }
 }
 
