@@ -323,7 +323,7 @@ pub struct KvmVcpu {
 }
 
 impl KvmVcpu {
-    thread_local!(static TLS_VCPU_PTR: RefCell<Option<*const KvmVcpu>> = RefCell::new(None));
+    thread_local!(static TLS_VCPU_PTR: RefCell<Option<*const KvmVcpu>> = const { RefCell::new(None) });
 
     /// Create a new vCPU.
     // This is needed so we can initialize the vcpu the same way on x86_64 and aarch64, but
@@ -554,11 +554,11 @@ impl KvmVcpu {
 
         // Write segments to guest memory.
         gdt_table.write_to_mem(guest_memory).map_err(Error::Gdt)?;
-        sregs.gdt.base = BOOT_GDT_OFFSET as u64;
+        sregs.gdt.base = BOOT_GDT_OFFSET;
         sregs.gdt.limit = std::mem::size_of_val(&gdt_table) as u16 - 1;
 
         write_idt_value(0, guest_memory).map_err(Error::Gdt)?;
-        sregs.idt.base = BOOT_IDT_OFFSET as u64;
+        sregs.idt.base = BOOT_IDT_OFFSET;
         sregs.idt.limit = std::mem::size_of::<u64>() as u16 - 1;
 
         sregs.cs = code_seg;
@@ -654,6 +654,7 @@ impl KvmVcpu {
     fn set_local_immediate_exit(value: u8) {
         Self::TLS_VCPU_PTR.with(|v| {
             if let Some(vcpu) = *v.borrow() {
+                // SAFETY:
                 // The block below modifies a mmaped memory region (`kvm_run` struct) which is valid
                 // as long as the `VMM` is still in scope. This function is called in response to
                 // SIGRTMIN(), while the vCPU threads are still active. Their termination are
@@ -671,7 +672,7 @@ impl KvmVcpu {
     /// # Arguments
     ///
     /// * `instruction_pointer`: Represents the start address of the vcpu. This can be None
-    /// when the IP is specified using the platform dependent registers.
+    ///   when the IP is specified using the platform dependent registers.
     #[allow(clippy::if_same_then_else)]
     pub fn run(&mut self, instruction_pointer: Option<GuestAddress>) -> Result<()> {
         if let Some(ip) = instruction_pointer {

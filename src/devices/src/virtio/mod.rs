@@ -117,7 +117,7 @@ pub struct Env<'a, M, B> {
     pub kernel_cmdline: &'a mut Cmdline,
 }
 
-impl<'a, M, B> Env<'a, M, B>
+impl<M, B> Env<'_, M, B>
 where
     // We're using this (more convoluted) bound so we can pass both references and smart
     // pointers such as mutex guards here.

@@ -349,13 +349,13 @@ impl<EH: 'static + ExitHandler + Send> KvmVm<EH> {
             let memory_region = kvm_userspace_memory_region {
                 slot: index as u32,
                 guest_phys_addr: region.start_addr().raw_value(),
-                memory_size: region.len() as u64,
+                memory_size: region.len(),
                 // It's safe to unwrap because the guest address is valid.
                 userspace_addr: guest_memory.get_host_address(region.start_addr()).unwrap() as u64,
                 flags: 0,
             };
 
-            // Safe because:
+            // SAFETY:
             // * userspace_addr is a valid address for a memory region, obtained by calling
             //   get_host_address() on a valid region's start address;
             // * the memory regions do not overlap - there's either a single region spanning
@@ -478,7 +478,7 @@ impl<EH: 'static + ExitHandler + Send> KvmVm<EH> {
     /// # Arguments
     ///
     /// * `vcpu_run_addr`: address in guest memory where the vcpu run starts. This can be None
-    ///  when the IP is specified using the platform dependent registers.
+    ///   when the IP is specified using the platform dependent registers.
     pub fn run(&mut self, vcpu_run_addr: Option<GuestAddress>) -> Result<()> {
         if self.vcpus.len() != self.config.num_vcpus as usize {
             return Err(Error::RunVcpus(io::Error::from(ErrorKind::InvalidInput)));
@@ -659,7 +659,7 @@ mod tests {
     #[test]
     #[cfg(target_arch = "x86_64")]
     fn test_failed_setup_mptable() {
-        let num_vcpus = (MAX_SUPPORTED_CPUS + 1) as u8;
+        let num_vcpus = MAX_SUPPORTED_CPUS + 1;
         let kvm = Kvm::new().unwrap();
         let guest_memory = default_memory();
         let res = default_vm(&kvm, &guest_memory, num_vcpus);

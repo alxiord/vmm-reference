@@ -94,8 +94,8 @@ fn set_apic_delivery_mode(reg: i32, mode: i32) -> i32 {
 /// # Arguments
 /// * `klapic`: The corresponding `kvm_lapic_state` for which to set the delivery mode.
 /// * `reg_offset`: The offset that identifies the register for which to set the delivery mode.
-///                 Available options exported by this module are: [APIC_LVT0_REG_OFFSET] and
-///                 [APIC_LVT1_REG_OFFSET].
+///   Available options exported by this module are: [APIC_LVT0_REG_OFFSET] and
+///   [APIC_LVT1_REG_OFFSET].
 /// * `mode`: The APIC mode to set.
 ///
 /// # Example - Configure LAPIC with KVM

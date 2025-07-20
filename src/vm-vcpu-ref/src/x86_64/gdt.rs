@@ -51,6 +51,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 /// Descriptors" of the Intel Manual Volume 3a.
 pub struct SegmentDescriptor(pub u64);
 
+// SAFETY:
 // Safe because SegmentDescriptor is just a wrapper over u64.
 unsafe impl ByteValued for SegmentDescriptor {}
 
@@ -63,14 +64,14 @@ impl SegmentDescriptor {
     ///
     /// # Arguments
     /// * `base`: A 32-bit value containing the linear address where the
-    ///           segment begins.
+    ///   segment begins.
     /// * `limit`: A 20-bit value (the most significant 12 bits are ignored from
-    ///            the value) that tells the maximum addressable unit.
+    ///   the value) that tells the maximum addressable unit.
     /// * `flags`: Depending on the segment type, the flags set up various
-    ///            properties such as the privilege level, type, and granularity.
-    ///            The full list of available flags is available in section
-    ///            3.4.5 of the Intel® 64 and IA-32 Architectures Developer's
-    ///            Manual: Vol. 3A.
+    ///   properties such as the privilege level, type, and granularity.
+    ///   The full list of available flags is available in section
+    ///   3.4.5 of the Intel® 64 and IA-32 Architectures Developer's
+    ///   Manual: Vol. 3A.
     pub fn from(flags: u16, base: u32, limit: u32) -> Self {
         // The segment descriptor has the following inner structure:
         // |31                                    16|15                               0|

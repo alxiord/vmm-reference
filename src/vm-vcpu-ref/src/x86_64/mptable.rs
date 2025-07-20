@@ -33,14 +33,26 @@ struct MpcLintsrc(mpspec::mpc_lintsrc);
 #[derive(Copy, Clone, Default)]
 struct MpfIntel(mpspec::mpf_intel);
 
-// These `mpspec` wrapper types are POD (Plain Old Data), so reading them from
-// data a slice of u8 (which is what ByteValued offers) is safe.
+// SAFETY:
+// Safe before the wrapper type is POD (Plain Old Data).
 unsafe impl ByteValued for MpcBus {}
+// SAFETY:
+// Safe before the wrapper type is POD (Plain Old Data).
 unsafe impl ByteValued for MpcCpu {}
+// SAFETY:
+// Safe before the wrapper type is POD (Plain Old Data).
 unsafe impl ByteValued for MpcIntsrc {}
+// SAFETY:
+// Safe before the wrapper type is POD (Plain Old Data).
 unsafe impl ByteValued for MpcIoapic {}
+// SAFETY:
+// Safe before the wrapper type is POD (Plain Old Data).
 unsafe impl ByteValued for MpcTable {}
+// SAFETY:
+// Safe before the wrapper type is POD (Plain Old Data).
 unsafe impl ByteValued for MpcLintsrc {}
+// SAFETY:
+// Safe before the wrapper type is POD (Plain Old Data).
 unsafe impl ByteValued for MpfIntel {}
 
 // MPTABLE, describing VCPUS.
@@ -85,18 +97,15 @@ pub type Result<T> = result::Result<T, Error>;
 // one APIC ID, so only 254 CPUs at maximum may be supported.
 pub const MAX_SUPPORTED_CPUS: u8 = 254;
 
-// Convenience macro for making arrays of diverse character types.
-macro_rules! char_array {
-    ($t:ty; $( $c:expr ),*) => ( [ $( $c as $t ),* ] )
-}
-
 // Most of these variables are sourced from the Intel MP Spec 1.4.
-const SMP_MAGIC_IDENT: [c_char; 4] = char_array!(c_char; '_', 'M', 'P', '_');
-const MPC_SIGNATURE: [c_char; 4] = char_array!(c_char; 'P', 'C', 'M', 'P');
+const SMP_MAGIC_IDENT: [i8; 4] = [b'_' as i8, b'M' as i8, b'P' as i8, b'_' as i8];
+const MPC_SIGNATURE: [i8; 4] = [b'P' as i8, b'C' as i8, b'M' as i8, b'P' as i8];
 const MPC_SPEC: i8 = 4;
-const MPC_OEM: [c_char; 8] = char_array!(c_char; 'r', 'u', 's', 't', '-', 'v', 'm', 'm');
+const MPC_OEM: [i8; 8] = [
+    b'r' as i8, b'u' as i8, b's' as i8, b't' as i8, b'-' as i8, b'v' as i8, b'm' as i8, b'm' as i8,
+];
 const MPC_PRODUCT_ID: [c_char; 12] = ['0' as c_char; 12];
-const BUS_TYPE_ISA: [u8; 6] = char_array!(u8; 'I', 'S', 'A', ' ', ' ', ' ');
+const BUS_TYPE_ISA: [u8; 6] = [b'I', b'S', b'A', b' ', b' ', b' '];
 const IO_APIC_DEFAULT_PHYS_BASE: u32 = 0xfec0_0000; // source: linux/arch/x86/include/asm/apicdef.h
 const APIC_DEFAULT_PHYS_BASE: u32 = 0xfee0_0000; // source: linux/arch/x86/include/asm/apicdef.h
 const APIC_VERSION: u8 = 0x14;
@@ -105,6 +114,7 @@ const CPU_FEATURE_APIC: u32 = 0x200;
 const CPU_FEATURE_FPU: u32 = 0x001;
 
 fn compute_checksum<T: Copy>(v: &T) -> u8 {
+    // SAFETY:
     // Safe because we are only reading the bytes within the size of the `T` reference `v`.
     let v_slice = unsafe { slice::from_raw_parts(v as *const T as *const u8, mem::size_of::<T>()) };
     let mut checksum: u8 = 0;
